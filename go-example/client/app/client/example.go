@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"maybe/article/lottery/common"
-
 	"myth/go-essential/app"
-	"myth/go-essential/base/rpc/server"
+	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/net/rpc/warden"
-	"myth/go-example/manager"
+	"myth/go-example/client/handler"
+	"myth/go-example/client/manager"
 )
 
 func main() {
@@ -30,19 +30,15 @@ func main() {
 			log.Info("WithCronTab")
 			return nil
 		}),
-		//app.WithHttpServer(func(e *gin.Engine, mpp *app.MythApp) error {
-		//	log.Info("WithHttpServer")
-		//	return nil
-		//}),
-		app.WithRpcClient(func(mpp *app.MythApp) error {
-			log.Info("WithRpcClient")
+		app.WithHttpServer(func(e *gin.Engine, mpp *app.MythApp) error {
+			log.Info("WithHttpServer")
 			return nil
 		}),
-		app.WithRpcServer(func(srv server.Server, mpp *app.MythApp) error {
-			log.Info("WithRpcServer")
-			server := srv.(*warden.Server)
-			server.Start()
-
+		app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
+			log.Info("WithRpcClient")
+			c := client.(*warden.Client)
+			hdr := handler.NewHandler(c)
+			hdr.SayHello("hello")
 			return nil
 		}),
 	)

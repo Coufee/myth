@@ -9,10 +9,11 @@ require (
 	github.com/gin-gonic/gin v1.6.2
 	github.com/go-kratos/kratos v0.4.2 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
-	github.com/golang/protobuf v1.4.0 // indirect
+	github.com/golang/protobuf v1.4.0
 	github.com/google/uuid v1.1.1
+	github.com/gorilla/websocket v1.4.0
 	github.com/philchia/agollo v2.1.0+incompatible // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1 // indirect
 	github.com/shirou/gopsutil v2.20.3+incompatible // indirect
 	github.com/sirupsen/logrus v1.5.0

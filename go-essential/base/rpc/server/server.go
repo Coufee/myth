@@ -15,8 +15,6 @@ import (
 type Server interface {
 	Options() Options
 	Init(...Option) error
-	//Handle(Handler) error
-	//NewHandler(interface{}, ...HandlerOption) Handler
 	//NewSubscriber(string, interface{}, ...SubscriberOption) Subscriber
 	//Subscribe(Subscriber) error
 	Start() error

@@ -2,9 +2,12 @@ package app
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"myth/go-essential/base/rpc/client"
 	"net"
+	"net/http"
 
 	"myth/go-essential/base/rpc/server"
 	"myth/go-essential/net/rpc/warden"
@@ -24,6 +27,7 @@ const (
 	WorkFlowNameBase       = "base"
 	WorkFlowNameLog        = "log"
 	WorkFlowNameHttpServer = "http"
+	WorkFlowNameWebSock    = "web_sock"
 	WorkFlowNameRpcServer  = "rpc"
 	WorkFlowNameManager    = "manager"
 	WorkFlowNameCron       = "cron"
@@ -46,6 +50,7 @@ type MythApp struct {
 	Usage     string
 	Version   string
 	Manager   Manager
+	Upgrade   websocket.Upgrader
 	WorkFlows []WorkFlow
 }
 
@@ -111,6 +116,7 @@ func (mpp *MythApp) CliRun(workflow ...WorkFlow) error {
 }
 
 func (mpp *MythApp) Run(workflow ...WorkFlow) {
+	log.Info("Run Myth App All Start")
 	_, _ = time.LoadLocation("Asia/Shanghai")
 	mpp.WorkFlows = workflow
 
@@ -134,7 +140,6 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) {
 		}
 	}
 
-	log.Info("Run Myth App All Start")
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	for {
@@ -223,7 +228,7 @@ func WithManager(handler func(mpp *MythApp) Manager) WorkFlow {
 }
 
 func WithHttpServer(handler func(e *gin.Engine, mpp *MythApp) error) WorkFlow {
-	address := "127.0.0.1:8080"
+	address := "127.0.0.1:8083"
 	e := gin.Default()
 	return WorkFlow{
 		Type: WorkFlowTypeAsync,
@@ -241,42 +246,73 @@ func WithHttpServer(handler func(e *gin.Engine, mpp *MythApp) error) WorkFlow {
 	}
 }
 
-func WithRpcClient(handler func(mpp *MythApp) error) WorkFlow {
+func WithRpcClient(handler func(client client.Client, mpp *MythApp) error) WorkFlow {
+	client := &warden.Client{}
 	return WorkFlow{
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameRpcServer,
 		Process: func(mythApp *MythApp) error {
-			if err := handler(mythApp); err != nil {
+			if err := client.Init(); err != nil {
 				return err
 			}
+
+			if err := handler(client, mythApp); err != nil {
+				return err
+			}
+
 			return nil
 		},
 		Close: func(mythApp *MythApp) error {
-			return nil
+			return client.Stop()
 		},
 	}
 }
 
 func WithRpcServer(handler func(server server.Server, mpp *MythApp) error) WorkFlow {
-	server := &warden.Server{}
+	srv := warden.NewServer()
 	return WorkFlow{
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameRpcServer,
 		Process: func(mythApp *MythApp) error {
-			address := "127.0.0.1:8081"
+			address := "127.0.0.1:8080"
 			lis, err := net.Listen("tcp", address)
 			if err != nil {
 				return err
 			}
 
-			if err := handler(server, mythApp); err != nil {
+			if err := srv.Init(); err != nil {
 				return err
 			}
 
-			return server.Serve(lis)
+			if err := handler(srv, mythApp); err != nil {
+				return err
+			}
+
+			return srv.Serve(lis)
 		},
 		Close: func(mythApp *MythApp) error {
-			return server.Stop(context.Background())
+			return srv.Stop(context.Background())
+		},
+	}
+}
+
+func WithWebSock(handler func(mpp *MythApp) error) WorkFlow {
+	return WorkFlow{
+		Type: WorkFlowTypeAsync,
+		Name: WorkFlowNameWebSock,
+		Process: func(mythApp *MythApp) error {
+			mythApp.Upgrade = websocket.Upgrader{
+				ReadBufferSize:   1024,
+				WriteBufferSize:  1024,
+				HandshakeTimeout: 5 * time.Second,
+				CheckOrigin: func(r *http.Request) bool {
+					return true
+				},
+			}
+			return handler(mythApp)
+		},
+		Close: func(mythApp *MythApp) error {
+			return nil
 		},
 	}
 }

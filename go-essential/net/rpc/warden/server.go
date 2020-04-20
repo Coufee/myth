@@ -15,21 +15,22 @@ var (
 )
 
 type Server struct {
-	server grpc.Server
 	// marks the serve as started
 	started bool
 	// used for first registration
 	registered bool
 
+	server   *grpc.Server
 	opts     server.Options
 	mutex    sync.RWMutex
 	handlers []grpc.UnaryServerInterceptor
 }
 
-func NewServer() server.Server {
+func NewServer() *Server {
 	srv := &Server{}
+	srv.server= grpc.NewServer()
 
-	srv.Use(srv.Handle())
+	srv.Use(srv.handle())
 	return srv
 }
 
@@ -38,10 +39,15 @@ func (s *Server) Options() server.Options {
 }
 
 func (s *Server) Init(opts ...server.Option) error {
+	s.server= grpc.NewServer()
 	return nil
 }
 
-func (s *Server) Handle() grpc.UnaryServerInterceptor {
+func (s *Server) GetServer() *grpc.Server {
+	return s.server
+}
+
+func (s *Server) handle() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		//var (
 		//	cancel func()
@@ -109,6 +115,13 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
+	s.mutex.RLock()
+	if !s.started {
+		s.mutex.RUnlock()
+		return nil
+	}
+	s.mutex.RUnlock()
+
 	ch := make(chan struct{})
 	go func() {
 		s.server.GracefulStop()
@@ -126,7 +139,7 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 func (s *Server) String() string {
-	return "grpc"
+	return "rpc server"
 }
 
 func (s *Server) Serve(lis net.Listener) error {

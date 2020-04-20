@@ -18,6 +18,7 @@ type Client interface {
 	//Call(ctx context.Context, req Request, rsp interface{}, opts ...CallOption) error
 	//Stream(ctx context.Context, req Request, opts ...CallOption) (Stream, error)
 	//Publish(ctx context.Context, msg Message, opts ...PublishOption) error
+	Stop() error
 	String() string
 }
 
