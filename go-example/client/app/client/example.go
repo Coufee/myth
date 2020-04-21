@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/client"
@@ -30,18 +29,23 @@ func main() {
 			log.Info("WithCronTab")
 			return nil
 		}),
-		app.WithHttpServer(func(e *gin.Engine, mpp *app.MythApp) error {
-			log.Info("WithHttpServer")
-			return nil
-		}),
+		//app.WithHttpServer(func(e *gin.Engine, mpp *app.MythApp) error {
+		//	log.Info("WithHttpServer")
+		//	return nil
+		//}),
 		app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
 			log.Info("WithRpcClient")
 			c := client.(*warden.Client)
 
 			//中间件
-			c.UseUnary(handler.ExampleAuthFunc())
+			i:=0
+			c.UseUnary(handler.ExampleAuthFunc(&i))
 			hdr := handler.NewHandler(c)
-			hdr.SayHello("hello")
+
+			for ;;i++{
+				hdr.SayHello("hello")
+			}
+
 			return nil
 		}),
 	)

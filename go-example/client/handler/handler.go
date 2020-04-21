@@ -67,9 +67,9 @@ func (handler *Handler) StreamHello(name string) (*pb.HelloReply, error) {
 }
 
 //中间件
-func ExampleAuthFunc() grpc.UnaryClientInterceptor {
+func ExampleAuthFunc(i *int) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		log.Debug("ni hao")
+		log.Debugf("ni hao %v", *i)
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }

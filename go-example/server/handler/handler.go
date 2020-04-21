@@ -60,7 +60,7 @@ func userClaimFromToken(struct{}) string {
 	return "foobar"
 }
 
-func ExampleAuthFunc() grpc.UnaryServerInterceptor{
+func ExampleAuthFunc() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		token, err := grpc_auth.AuthFromMD(ctx, "bearer")
 		if err != nil {

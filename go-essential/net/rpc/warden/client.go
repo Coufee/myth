@@ -3,11 +3,12 @@ package warden
 import (
 	"context"
 	"github.com/pkg/errors"
+	//log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"myth/go-essential/base/rpc/client"
+	"myth/go-essential/container/pool"
 	"sync"
-	"time"
 )
 
 type Client struct {
@@ -19,21 +20,22 @@ type Client struct {
 	UnaryHandlers  []grpc.UnaryClientInterceptor
 	StreamHandlers []grpc.StreamClientInterceptor
 
-	dialOpts []grpc.DialOption
-	mutex    sync.RWMutex
-	opts     client.Options
-	pool     *pool
+	dialOpts   []grpc.DialOption
+	mutex      sync.RWMutex
+	opts       client.Options
+	clientPool *ClientPool
+	//rpcPool    *RpcPool
 }
 
 func NewClient() client.Client {
 	client := &Client{}
-	client.pool = newPool(2, time.Minute, 10, 1)
-	//conf := &pool.Config{
-	//	Active: 3,
-	//	Idle:   3,
-	//	Wait:   true,
-	//}
-	//client.pool = NewClientPool(conf)
+	conf := &pool.Config{
+		Active: 3,
+		Idle:   3,
+		Wait:   true,
+	}
+	client.clientPool = NewClientPool(conf)
+	//client.rpcPool = newPool(3, 3, 3, 3)
 
 	return client
 }
@@ -94,6 +96,7 @@ func (c *Client) UseStream(handlers ...grpc.StreamClientInterceptor) *Client {
 }
 
 func (c *Client) Stop() error {
+	//c.pool.Close()
 	return nil
 }
 
@@ -116,26 +119,26 @@ func (c *Client) dial(ctx context.Context, target string, opts ...grpc.DialOptio
 		WithStreamClientChain(c.StreamHandlers...),
 	)
 
-	if c.pool == nil {
+	if c.clientPool == nil {
 		return nil, errors.New("client pool is empty")
 	}
 
-	//connTemp, err := c.pool.Get(ctx, target, opts...)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//conn = connTemp.conn
-
-	cc, err := c.pool.getConn(ctx, target, dialOptions...)
+	rpcConn, err := c.clientPool.Get(ctx, target, dialOptions...)
 	if err != nil {
 		return nil, err
-		//return errors.InternalServerError("go.micro.client", fmt.Sprintf("Error sending request: %v", err))
 	}
 	defer func() {
-		// defer execution of release
-		c.pool.release(target, cc, err)
+		rpcConn.Close()
+		c.clientPool.Put(ctx, rpcConn)
 	}()
-	conn = cc.ClientConn
+
+	conn = rpcConn.ClientConn
+
+	//cc, err := c.rpcPool.getConn(ctx, target, dialOptions...)
+	//if err != nil {
+	//	log.Error(err)
+	//}
+	//conn = cc.ClientConn
 
 	//conn, err = grpc.DialContext(ctx, target, dialOptions...)
 	//if err != nil {

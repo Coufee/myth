@@ -21,5 +21,3 @@ func (manager *Manger) Close() error {
 	log.Info("manager close")
 	return nil
 }
-
-
