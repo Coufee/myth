@@ -37,6 +37,9 @@ func main() {
 		app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
 			log.Info("WithRpcClient")
 			c := client.(*warden.Client)
+
+			//中间件
+			c.UseUnary(handler.ExampleAuthFunc())
 			hdr := handler.NewHandler(c)
 			hdr.SayHello("hello")
 			return nil

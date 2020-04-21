@@ -1,28 +1,39 @@
 package warden
 
 import (
-	"fmt"
+	"context"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"myth/go-essential/base/rpc/client"
-
-	"context"
-	"net/url"
-	"os"
 	"sync"
+	"time"
 )
 
 type Client struct {
+	// TLS
+	OpenTLS bool
+	// the underlying connection is up
+	NonBlock bool
+	// middleware
+	UnaryHandlers  []grpc.UnaryClientInterceptor
+	StreamHandlers []grpc.StreamClientInterceptor
+
+	dialOpts []grpc.DialOption
 	mutex    sync.RWMutex
-	dialOpts  []grpc.DialOption
-	handlers []grpc.UnaryClientInterceptor
 	opts     client.Options
+	pool     *pool
 }
 
 func NewClient() client.Client {
 	client := &Client{}
+	client.pool = newPool(2, time.Minute, 10, 1)
+	//conf := &pool.Config{
+	//	Active: 3,
+	//	Idle:   3,
+	//	Wait:   true,
+	//}
+	//client.pool = NewClientPool(conf)
 
 	return client
 }
@@ -31,16 +42,21 @@ func (c *Client) Options() client.Options {
 	return c.opts
 }
 
-func (c *Client) Init(opts ...client.Option) error {
-	return nil
-}
-
-func (c *Client) Stop() error {
-	return nil
-}
-
 func (c *Client) String() string {
-	return "rpc client"
+	return "grpc"
+}
+
+func (c *Client) Init(opts ...client.Option) error {
+	//if len(opts) == 0 {
+	//	return errors.New("warden: rpc client options is empty")
+	//}
+
+	return nil
+}
+
+func (c *Client) UseOpts(opts ...grpc.DialOption) *Client {
+	c.dialOpts = append(c.dialOpts, opts...)
+	return c
 }
 
 func (c *Client) cloneOpts() []grpc.DialOption {
@@ -49,146 +65,86 @@ func (c *Client) cloneOpts() []grpc.DialOption {
 	return dialOptions
 }
 
-func (c *Client) dial(ctx context.Context, target string, opts ...grpc.DialOption) (conn *grpc.ClientConn, err error) {
-	//dialOptions := c.cloneOpts()
-	//if !c.opts.NonBlock {
-	//	dialOptions = append(dialOptions, grpc.WithBlock())
-	//}
-	//dialOptions = append(dialOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
-		//Time:                time.Duration(c.opts.KeepAliveInterval),
-		//Timeout:             time.Duration(c.opts.KeepAliveTimeout),
-		//PermitWithoutStream: !c.opts.KeepAliveWithoutStream,
-	//}))
-	//dialOptions = append(dialOptions, opts...)
-
-	// init default handler
-	var handlers []grpc.UnaryClientInterceptor
-	//handlers = append(handlers, c.recovery())
-	//handlers = append(handlers, clientLogging(dialOptions...))
-	handlers = append(handlers, c.handlers...)
-	// NOTE: c.handle must be a last interceptor.
-	handlers = append(handlers, c.handle())
-
-	//dialOptions = append(dialOptions, grpc.WithUnaryInterceptor(chainUnaryClient(handlers)))
-	c.mutex.RLock()
-	//conf := c.conf
-	c.mutex.RUnlock()
-	//if conf.Dial > 0 {
-	//	var cancel context.CancelFunc
-	//	ctx, cancel = context.WithTimeout(ctx, time.Duration(conf.Dial))
-	//	defer cancel()
-	//}
-	if u, e := url.Parse(target); e == nil {
-		v := u.Query()
-		//for _, c := range c.conf.Clusters {
-		//	v.Add(naming.MetaCluster, c)
-		//}
-		//if c.conf.Zone != "" {
-		//	v.Add(naming.MetaZone, c.conf.Zone)
-		//}
-		//if v.Get("subset") == "" && c.conf.Subset > 0 {
-		//	v.Add("subset", strconv.FormatInt(int64(c.conf.Subset), 10))
-		//}
-		u.RawQuery = v.Encode()
-		// 比较_grpcTarget中的appid是否等于u.path中的appid，并替换成mock的地址
-		//for _, t := range _grpcTarget {
-		//	strs := strings.SplitN(t, "=", 2)
-		//	if len(strs) == 2 && ("/"+strs[0]) == u.Path {
-		//		u.Path = "/" + strs[1]
-		//		u.Scheme = "passthrough"
-		//		u.RawQuery = ""
-		//		break
-		//	}
-		//}
-		target = u.String()
-		log.Debug(target)
+func (c *Client) UseUnary(handlers ...grpc.UnaryClientInterceptor) *Client {
+	finalSize := len(c.UnaryHandlers) + len(handlers)
+	if finalSize >= int(_abortIndex) {
+		panic("warden: client use unary interceptor too many handlers")
 	}
 
-	log.Info(target)
-
-	if conn, err = grpc.DialContext(ctx, target,opts...); err != nil {
-		log.Error(err)
-		fmt.Fprintf(os.Stderr, "warden client: dial %s error %v!", target, err)
-	}
-	err = errors.WithStack(err)
-	return
+	mergedHandlers := make([]grpc.UnaryClientInterceptor, finalSize)
+	copy(mergedHandlers, c.UnaryHandlers)
+	copy(mergedHandlers[len(c.UnaryHandlers):], handlers)
+	c.UnaryHandlers = mergedHandlers
+	return c
 }
 
-// handle returns a new unary client interceptor for OpenTracing\Logging\LinkTimeout.
-func (c *Client) handle() grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
-		//var (
-		//	ok     bool
-		//	t      trace.Trace
-		//	gmd    metadata.MD
-		//	conf   *ClientConfig
-		//	cancel context.CancelFunc
-		//	addr   string
-		//	p      peer.Peer
-		//)
-		//var ec ecode.Codes = ecode.OK
-		//// apm tracing
-		//if t, ok = trace.FromContext(ctx); ok {
-		//	t = t.Fork("", method)
-		//	defer t.Finish(&err)
-		//}
-		//
-		//// setup metadata
-		//gmd = baseMetadata()
-		//trace.Inject(t, trace.GRPCFormat, gmd)
-		//c.mutex.RLock()
-		//if conf, ok = c.conf.Method[method]; !ok {
-		//	conf = c.conf
-		//}
-		//c.mutex.RUnlock()
-		//brk := c.breaker.Get(method)
-		//if err = brk.Allow(); err != nil {
-		//	_metricClientReqCodeTotal.Inc(method, "breaker")
-		//	return
-		//}
-		//defer onBreaker(brk, &err)
-		//var timeOpt *TimeoutCallOption
-		//for _, opt := range opts {
-		//	var tok bool
-		//	timeOpt, tok = opt.(*TimeoutCallOption)
-		//	if tok {
-		//		break
-		//	}
-		//}
-		//if timeOpt != nil && timeOpt.Timeout > 0 {
-		//	ctx, cancel = context.WithTimeout(nmd.WithContext(ctx), timeOpt.Timeout)
-		//} else {
-		//	_, ctx, cancel = conf.Timeout.Shrink(ctx)
-		//}
-		//
-		//defer cancel()
-		//nmd.Range(ctx,
-		//	func(key string, value interface{}) {
-		//		if valstr, ok := value.(string); ok {
-		//			gmd[key] = []string{valstr}
-		//		}
-		//	},
-		//	nmd.IsOutgoingKey)
-		//// merge with old matadata if exists
-		//if oldmd, ok := metadata.FromOutgoingContext(ctx); ok {
-		//	gmd = metadata.Join(gmd, oldmd)
-		//}
-		//ctx = metadata.NewOutgoingContext(ctx, gmd)
-		//
-		//opts = append(opts, grpc.Peer(&p))
-		//if err = invoker(ctx, method, req, reply, cc, opts...); err != nil {
-		//	gst, _ := gstatus.FromError(err)
-		//	ec = status.ToEcode(gst)
-		//	err = errors.WithMessage(ec, gst.Message())
-		//}
-		//if p.Addr != nil {
-		//	addr = p.Addr.String()
-		//}
-		//if t != nil {
-		//	t.SetTag(trace.String(trace.TagAddress, addr), trace.String(trace.TagComment, ""))
-		//}
-		return
+//数据流中间件
+func (c *Client) UseStream(handlers ...grpc.StreamClientInterceptor) *Client {
+	finalSize := len(c.StreamHandlers) + len(handlers)
+	if finalSize >= int(_abortIndex) {
+		panic("warden: client use stream interceptor too many handlers")
 	}
+
+	mergedHandlers := make([]grpc.StreamClientInterceptor, finalSize)
+	copy(mergedHandlers, c.StreamHandlers)
+	copy(mergedHandlers[len(c.StreamHandlers):], handlers)
+	c.StreamHandlers = mergedHandlers
+
+	return c
+}
+
+func (c *Client) Stop() error {
+	return nil
+}
+
+func (c *Client) dial(ctx context.Context, target string, opts ...grpc.DialOption) (conn *grpc.ClientConn, err error) {
+	dialOptions := c.cloneOpts()
+	dialOptions = append(dialOptions, opts...)
+	if !c.NonBlock {
+		dialOptions = append(dialOptions, grpc.WithBlock())
+	}
+
+	//dialOptions = append(dialOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+	//	Time:                time.Duration(c.conf.KeepAliveInterval),
+	//	Timeout:             time.Duration(c.conf.KeepAliveTimeout),
+	//	PermitWithoutStream: !c.conf.KeepAliveWithoutStream,
+	//}))
+
+	dialOptions = append(
+		dialOptions,
+		WithUnaryClientChain(c.UnaryHandlers...),
+		WithStreamClientChain(c.StreamHandlers...),
+	)
+
+	if c.pool == nil {
+		return nil, errors.New("client pool is empty")
+	}
+
+	//connTemp, err := c.pool.Get(ctx, target, opts...)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//conn = connTemp.conn
+
+	cc, err := c.pool.getConn(ctx, target, dialOptions...)
+	if err != nil {
+		return nil, err
+		//return errors.InternalServerError("go.micro.client", fmt.Sprintf("Error sending request: %v", err))
+	}
+	defer func() {
+		// defer execution of release
+		c.pool.release(target, cc, err)
+	}()
+	conn = cc.ClientConn
+
+	//conn, err = grpc.DialContext(ctx, target, dialOptions...)
+	//if err != nil {
+	//	err = errors.WithStack(err)
+	//	log.Error(os.Stderr, "warden: client dial %s error %v!", target, err)
+	//	return nil, err
+	//}
+
+	return
 }
 
 func (c *Client) Dial(ctx context.Context, target string, opts ...grpc.DialOption) (conn *grpc.ClientConn, err error) {
@@ -196,7 +152,6 @@ func (c *Client) Dial(ctx context.Context, target string, opts ...grpc.DialOptio
 	return c.dial(ctx, target, opts...)
 }
 
-// DialTLS creates a client connection over tls transport to the given target.
 func (c *Client) DialTLS(ctx context.Context, target string, file string, name string, opts ...grpc.DialOption) (conn *grpc.ClientConn, err error) {
 	var creds credentials.TransportCredentials
 	creds, err = credentials.NewClientTLSFromFile(file, name)
@@ -204,52 +159,7 @@ func (c *Client) DialTLS(ctx context.Context, target string, file string, name s
 		err = errors.WithStack(err)
 		return
 	}
+
 	opts = append(opts, grpc.WithTransportCredentials(creds))
 	return c.dial(ctx, target, opts...)
 }
-
-// Use attachs a global inteceptor to the Client.
-// For example, this is the right place for a circuit breaker or error management inteceptor.
-func (c *Client) Use(handlers ...grpc.UnaryClientInterceptor) *Client {
-	finalSize := len(c.handlers) + len(handlers)
-	if finalSize >= int(_abortIndex) {
-		panic("warden: client use too many handlers")
-	}
-	mergedHandlers := make([]grpc.UnaryClientInterceptor, finalSize)
-	copy(mergedHandlers, c.handlers)
-	copy(mergedHandlers[len(c.handlers):], handlers)
-	c.handlers = mergedHandlers
-	return c
-}
-
-// chainUnaryClient creates a single interceptor out of a chain of many interceptors.
-//
-// Execution is done in left-to-right order, including passing of context.
-// For example ChainUnaryClient(one, two, three) will execute one before two before three.
-func chainUnaryClient(handlers []grpc.UnaryClientInterceptor) grpc.UnaryClientInterceptor {
-	n := len(handlers)
-	if n == 0 {
-		return func(ctx context.Context, method string, req, reply interface{},
-			cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-			return invoker(ctx, method, req, reply, cc, opts...)
-		}
-	}
-
-	return func(ctx context.Context, method string, req, reply interface{},
-		cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		var (
-			i            int
-			chainHandler grpc.UnaryInvoker
-		)
-		chainHandler = func(ictx context.Context, imethod string, ireq, ireply interface{}, ic *grpc.ClientConn, iopts ...grpc.CallOption) error {
-			if i == n-1 {
-				return invoker(ictx, imethod, ireq, ireply, ic, iopts...)
-			}
-			i++
-			return handlers[i](ictx, imethod, ireq, ireply, ic, chainHandler, iopts...)
-		}
-
-		return handlers[0](ctx, method, req, reply, cc, chainHandler, opts...)
-	}
-}
-

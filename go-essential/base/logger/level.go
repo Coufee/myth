@@ -64,6 +64,7 @@ func GetLevel(levelStr string) (Level, error) {
 	}
 	return InfoLevel, fmt.Errorf("Unknown Level String: '%s', defaulting to InfoLevel", levelStr)
 }
+
 //
 //func Info(args ...interface{}) {
 //	DefaultLogger.Log(InfoLevel, args...)

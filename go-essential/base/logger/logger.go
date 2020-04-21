@@ -2,8 +2,8 @@
 package logger
 
 var (
-	// Default logger
-	//DefaultLogger Logger = NewHelper(NewLogger())
+//Default logger
+//DefaultLogger Logger = NewHelper(NewLogger())
 )
 
 // Logger is a generic logging interface

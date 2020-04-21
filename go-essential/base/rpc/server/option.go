@@ -11,9 +11,9 @@ import (
 )
 
 type Options struct {
-	Codecs       map[string]codec.NewCodec
+	Codecs map[string]codec.NewCodec
 	//Broker       broker.Broker
-	Registry     registry.Registry
+	Registry registry.Registry
 	//Tracer       trace.Tracer
 	//Auth         auth.Auth
 	//Transport    transport.Transport

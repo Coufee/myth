@@ -11,9 +11,9 @@ import (
 
 type Options struct {
 	//Broker    broker.Broker
-	Client    client.Client
-	Server    server.Server
-	Registry  registry.Registry
+	Client   client.Client
+	Server   server.Server
+	Registry registry.Registry
 	//Transport transport.Transport
 
 	// Before and After funcs
@@ -36,7 +36,7 @@ func NewOptions(opts ...Option) Options {
 		//Server:    server.DefaultServer,
 		//Registry:  registry.DefaultRegistry,
 		//Transport: transport.DefaultTransport,
-		Context:   context.Background(),
+		Context: context.Background(),
 	}
 
 	for _, o := range opts {

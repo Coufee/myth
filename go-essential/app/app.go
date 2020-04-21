@@ -84,7 +84,6 @@ func (mpp *MythApp) CliRun(workflow ...WorkFlow) error {
 		},
 		Action: func(ctx *cli.Context) error {
 			log.SetLevel(log.DebugLevel)
-			//log.Init(nil)
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 
@@ -119,10 +118,9 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) {
 	log.Info("Run Myth App All Start")
 	_, _ = time.LoadLocation("Asia/Shanghai")
 	mpp.WorkFlows = workflow
-
-	//log.Init(nil)
 	log.SetLevel(log.DebugLevel)
 	wg := sync.WaitGroup{}
+
 	for _, wf := range mpp.WorkFlows {
 		if wf.Type == WorkFlowTypeSync {
 			if err := wf.Process(mpp); err != nil {
@@ -144,11 +142,11 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) {
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		s := <-c
-		log.Info("Get a signal %v", s.String())
+		log.Info("Get A Signal %v", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
 			mpp.Close()
-			log.Info("Myth exit")
+			log.Info("Myth App Exit")
 			time.Sleep(time.Second)
 			return
 		case syscall.SIGHUP:
@@ -208,7 +206,6 @@ func WithCronTab(handler func(mpp *MythApp) error) WorkFlow {
 }
 
 func WithManager(handler func(mpp *MythApp) Manager) WorkFlow {
-	//manager := Manager
 	return WorkFlow{
 		Type: WorkFlowTypeSync,
 		Name: WorkFlowNameManager,
@@ -247,19 +244,19 @@ func WithHttpServer(handler func(e *gin.Engine, mpp *MythApp) error) WorkFlow {
 }
 
 func WithRpcClient(handler func(client client.Client, mpp *MythApp) error) WorkFlow {
-	client := &warden.Client{}
+	client :=warden.NewClient()
 	return WorkFlow{
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameRpcServer,
 		Process: func(mythApp *MythApp) error {
-			if err := client.Init(); err != nil {
-				return err
-			}
-
 			if err := handler(client, mythApp); err != nil {
 				return err
 			}
 
+			if err := client.Init(); err != nil {
+				return err
+			}
+			
 			return nil
 		},
 		Close: func(mythApp *MythApp) error {

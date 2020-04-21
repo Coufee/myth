@@ -2,7 +2,7 @@
 package registry
 
 import (
-"errors"
+	"errors"
 )
 
 var (
@@ -95,4 +95,3 @@ type ListOption func(*ListOptions)
 //func String() string {
 //	return DefaultRegistry.String()
 //}
-

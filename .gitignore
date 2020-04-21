@@ -1,1 +1,3 @@
 /vendor/
+go-example/client/app/client/client
+go-example/server/app/server/server
