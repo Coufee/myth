@@ -1,5 +1,9 @@
 {
   "LogConfig": {
     "LogLevel": "debug"
+  },
+  "ServerConfig": {
+    "Host": "0.0.0.0",
+    "RpcPort": 8081
   }
 }

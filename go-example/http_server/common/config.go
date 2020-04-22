@@ -14,5 +14,3 @@ func (c *Config) GetLogConfig() conf.LogConfig {
 func (c *Config) GetServerConfig() conf.ServerConfig {
 	return c.ServerConfig
 }
-
-

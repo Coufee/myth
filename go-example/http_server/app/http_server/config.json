@@ -1,10 +1,10 @@
 {
   "LogConfig": {
-    "LogLevel": "info"
+    "LogLevel": "debug"
   },
   "ServerConfig": {
     "Host": "0.0.0.0",
-    "RpcPort": 8080,
+    "HttpPort": 7000,
     "AccessControlAllowOrigin":[]
   }
 }

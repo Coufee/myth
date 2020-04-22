@@ -15,6 +15,7 @@ func main() {
 	p := app.GetMythApp()
 	p.Config = &common.Config{}
 	p.Run(
+		app.WithLogger(),
 		app.With(func(mpp *app.MythApp) error {
 			log.Info("With")
 			return nil

@@ -1,10 +1,19 @@
 package common
 
+import (
+	"myth/go-essential/conf"
+)
+
 type Config struct {
-	LogConfig Log `json:"LogConfig"`
+	LogConfig    conf.LogConfig
+	ServerConfig conf.ServerConfig
 }
 
-type Log struct {
-	LogLevel string `json:"LogLevel"`
+func (c *Config) GetLogConfig() conf.LogConfig {
+	return c.LogConfig
+}
+
+func (c *Config) GetServerConfig() conf.ServerConfig {
+	return c.ServerConfig
 }
 

@@ -32,6 +32,26 @@ var LoadConfigMap = map[string]interface{}{
 	LoadConfigTypeEureka: nil,
 }
 
+type LogConfig struct {
+	LogLevel string
+}
+
+type GetLogConfig interface {
+	GetLogConfig() LogConfig
+}
+
+type ServerConfig struct {
+	Host                     string
+	RpcPort                  int
+	HttpPort                 int
+	AccessControlAllowOrigin []string
+	AccessControlAllowMethod []string
+}
+
+type GetServerConfig interface {
+	GetServerConfig() ServerConfig
+}
+
 type ConfigWatcher func(config interface{}) error
 
 type ConfigLoader struct {

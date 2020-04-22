@@ -6,12 +6,14 @@ import (
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/net/rpc/warden"
+	"myth/go-example/http_server/common"
 	"myth/go-example/http_server/handler"
 	"myth/go-example/http_server/manager"
 )
 
 func main() {
 	p := app.GetMythApp()
+	p.Config = &common.Config{}
 	p.Run(
 		app.With(func(mpp *app.MythApp) error {
 			log.Info("With")

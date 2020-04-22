@@ -28,6 +28,7 @@ func NewHandler(conf *common.Config) *Handler {
 
 func (handler *Handler) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
 	log.Debug(handler.conf)
+	log.Debug(log.GetLevel())
 	resp := &pb.HelloReply{}
 	resp.Success = true
 	resp.Message = "aaa"

@@ -3,10 +3,12 @@ package app
 import (
 	"context"
 	"flag"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/benchmark/flags"
 	"myth/go-essential/base/rpc/client"
@@ -53,6 +55,7 @@ type MythApp struct {
 	Usage         string
 	Version       string
 	Config        interface{}
+	ConfigWatcher conf.ConfigWatcher
 	Manager       Manager
 	Upgrade       websocket.Upgrader
 	WorkFlows     []WorkFlow
@@ -131,9 +134,9 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) error {
 	}
 
 	//获取命令行参数
-	configLoader.LoadConfigType = *flag.String("load_type", conf.LoadConfigTypeLocal,"配置类型")
-	configLoader.FilePath = *flag.String("file_path",  conf.LocalConfigFilePath,"配置路径")
-	configLoader.EtcdEndpoint = *flags.StringSlice("etcd", []string{conf.EtcdConfigAddress},"etcd地址")
+	configLoader.LoadConfigType = *flag.String("load_type", conf.LoadConfigTypeLocal, "配置类型")
+	configLoader.FilePath = *flag.String("file_path", conf.LocalConfigFilePath, "配置路径")
+	configLoader.EtcdEndpoint = *flags.StringSlice("etcd", []string{conf.EtcdConfigAddress}, "etcd地址")
 
 	log.Debug(configLoader)
 	if err := configLoader.Load(); err != nil {
@@ -179,13 +182,22 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) error {
 	return nil
 }
 
+
+//func (mpp *MythApp) AddConfigWatcher(watcher conf.ConfigWatcher) {
+//	mpp.ConfigWatcher = append(mpp.ConfigWatcher, watcher)
+//}
+
 func (mpp *MythApp) defaultConfigWatcher(config interface{}) error {
-	if utils.VerifyNil(config){
+	if utils.VerifyNil(config) {
 		return errors.New("defaultConfigWatcher reload config is null ")
 	}
 
-	log.Debugf("defaultConfigWatcher %v", config)
+	log.Infof("defaultConfigWatcher %v", config)
 	mpp.Config = config
+	if !utils.VerifyNil(mpp.ConfigWatcher) {
+		log.Infof("ConfigWatcher %v", config)
+		mpp.ConfigWatcher(config)
+	}
 	return nil
 }
 
@@ -211,11 +223,33 @@ func With(handler func(mpp *MythApp) error) WorkFlow {
 }
 
 func WithLogger() WorkFlow {
+	setLogLevel := func(level string) error {
+		l, err := log.ParseLevel(level)
+		if err != nil {
+			log.Errorf("logger level(%v) error(%v)", viper.GetString("LogLevel"), err)
+			return err
+		}
+
+		log.SetLevel(l)
+		log.SetOutput(os.Stdout)
+		return nil
+	}
+
 	return WorkFlow{
 		Type: WorkFlowTypeSync,
 		Name: WorkFlowNameLog,
 		Process: func(mythApp *MythApp) error {
-			return nil
+			LoggerConfig, ok := mythApp.Config.(conf.GetLogConfig)
+			if !ok {
+				log.Error("config is not TCPServerConfig")
+				return errors.Errorf("config is not TCPServerConfig")
+			}
+
+			mythApp.ConfigWatcher = func(_ interface{}) error {
+				return setLogLevel(LoggerConfig.GetLogConfig().LogLevel)
+			}
+
+			return setLogLevel(LoggerConfig.GetLogConfig().LogLevel)
 		},
 		Close: func(mythApp *MythApp) error {
 			return nil
@@ -256,12 +290,18 @@ func WithManager(handler func(mpp *MythApp) Manager) WorkFlow {
 }
 
 func WithHttpServer(handler func(e *gin.Engine, mpp *MythApp) error) WorkFlow {
-	address := "127.0.0.1:8083"
 	e := gin.Default()
 	return WorkFlow{
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameHttpServer,
 		Process: func(mythApp *MythApp) error {
+			config, ok := mythApp.Config.(conf.GetServerConfig)
+			if !ok {
+				log.Errorf("WithRpcServer config is not ServerConfig \n %s", mythApp.Config)
+				return errors.Errorf(" WithHttpServer config is not ServerConfig")
+			}
+
+			address := fmt.Sprintf("%s:%d", config.GetServerConfig().Host, config.GetServerConfig().RpcPort)
 			if err := handler(e, mythApp); err != nil {
 				return err
 			}
@@ -302,7 +342,13 @@ func WithRpcServer(handler func(server server.Server, mpp *MythApp) error) WorkF
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameRpcServer,
 		Process: func(mythApp *MythApp) error {
-			address := "127.0.0.1:8080"
+			config, ok := mythApp.Config.(conf.GetServerConfig)
+			if !ok {
+				log.Errorf("WithRpcServer config is not ServerConfig \n %s", mythApp.Config.(conf.GetServerConfig))
+				return errors.Errorf("WithRpcServer config is not ServerConfig")
+			}
+
+			address := fmt.Sprintf("%s:%d", config.GetServerConfig().Host, config.GetServerConfig().RpcPort)
 			lis, err := net.Listen("tcp", address)
 			if err != nil {
 				return err
