@@ -3,6 +3,7 @@ package client
 
 import (
 	"context"
+	"google.golang.org/grpc"
 
 	"myth/go-essential/base/codec"
 )
@@ -13,6 +14,7 @@ import (
 type Client interface {
 	Init(...Option) error
 	Options() Options
+	Dial(context.Context, string, ...grpc.DialOption) (*grpc.ClientConn, error)
 	//NewMessage(topic string, msg interface{}, opts ...MessageOption) Message
 	//NewRequest(service, endpoint string, req interface{}, reqOpts ...RequestOption) Request
 	//Call(ctx context.Context, req Request, rsp interface{}, opts ...CallOption) error

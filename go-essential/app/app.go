@@ -271,7 +271,7 @@ func WithRpcServer(handler func(server server.Server, mpp *MythApp) error) WorkF
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameRpcServer,
 		Process: func(mythApp *MythApp) error {
-			address := "127.0.0.1:8080"
+			address := "127.0.0.1:8081"
 			lis, err := net.Listen("tcp", address)
 			if err != nil {
 				return err

@@ -1,4 +1,4 @@
-package handler
+package client_handler
 
 import (
 	"context"

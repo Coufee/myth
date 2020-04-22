@@ -3,10 +3,11 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"myth/go-essential/app"
-	"myth/go-essential/base/rpc/client"
+	"myth/go-essential/base/rpc/server"
 	"myth/go-essential/net/rpc/warden"
-	"myth/go-example/client/handler"
-	"myth/go-example/client/manager"
+	pb "myth/go-example/proto"
+	"myth/go-example/server/handler"
+	"myth/go-example/server/manager"
 )
 
 func main() {
@@ -29,23 +30,20 @@ func main() {
 			log.Info("WithCronTab")
 			return nil
 		}),
-		//app.WithHttpServer(func(e *gin.Engine, mpp *app.MythApp) error {
-		//	log.Info("WithHttpServer")
+		//app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
+		//	log.Info("WithRpcClient")
 		//	return nil
 		//}),
-		app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
-			log.Info("WithRpcClient")
-			c := client.(*warden.Client)
+		app.WithRpcServer(func(srv server.Server, mpp *app.MythApp) error {
+			log.Info("WithRpcServer")
+			server := srv.(*warden.Server)
 
-			//中间件
-			i:=0
-			c.UseUnary(handler.ExampleAuthFunc(&i))
-			hdr := handler.NewHandler(c)
+			//中间件测试
+			//server.UseUnary(handler.ExampleAuthFunc())
+			server.RegisterRpc()
 
-			for ;;i++{
-				hdr.SayHello("hello")
-			}
-
+			hdr := handler.NewHandler()
+			pb.RegisterGreeterServer(server.RpcServer(), hdr)
 			return nil
 		}),
 	)

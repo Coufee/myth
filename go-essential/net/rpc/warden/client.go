@@ -3,11 +3,12 @@ package warden
 import (
 	"context"
 	"github.com/pkg/errors"
-	//log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/container/pool"
+	"os"
 	"sync"
 )
 
@@ -27,8 +28,11 @@ type Client struct {
 	//rpcPool    *RpcPool
 }
 
-func NewClient() client.Client {
-	client := &Client{}
+func NewClient(opts ...grpc.DialOption) client.Client {
+	client := &Client{
+		dialOpts: opts,
+	}
+
 	conf := &pool.Config{
 		Active: 3,
 		Idle:   3,
@@ -123,16 +127,16 @@ func (c *Client) dial(ctx context.Context, target string, opts ...grpc.DialOptio
 		return nil, errors.New("client pool is empty")
 	}
 
-	rpcConn, err := c.clientPool.Get(ctx, target, dialOptions...)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		rpcConn.Close()
-		c.clientPool.Put(ctx, rpcConn)
-	}()
-
-	conn = rpcConn.ClientConn
+	//rpcConn, err := c.clientPool.Get(ctx, target, dialOptions...)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//defer func() {
+	//	rpcConn.Close()
+	//	c.clientPool.Put(ctx, rpcConn)
+	//}()
+	//
+	//conn = rpcConn.ClientConn
 
 	//cc, err := c.rpcPool.getConn(ctx, target, dialOptions...)
 	//if err != nil {
@@ -140,12 +144,12 @@ func (c *Client) dial(ctx context.Context, target string, opts ...grpc.DialOptio
 	//}
 	//conn = cc.ClientConn
 
-	//conn, err = grpc.DialContext(ctx, target, dialOptions...)
-	//if err != nil {
-	//	err = errors.WithStack(err)
-	//	log.Error(os.Stderr, "warden: client dial %s error %v!", target, err)
-	//	return nil, err
-	//}
+	conn, err = grpc.DialContext(ctx, target, dialOptions...)
+	if err != nil {
+		err = errors.WithStack(err)
+		log.Error(os.Stderr, "warden: client dial %s error %v!", target, err)
+		return nil, err
+	}
 
 	return
 }
