@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/afex/hystrix-go/hystrix"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	//"google.golang.org/grpc/codes"
+	//"google.golang.org/grpc/status"
 )
 
 // UnaryClientInterceptor returns a new unary client interceptor that validates outgoing messages.

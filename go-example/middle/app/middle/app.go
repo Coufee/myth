@@ -8,8 +8,8 @@ import (
 	"myth/go-essential/net/rpc/warden"
 	//"myth/go-essential/base/rpc/client"
 	//"myth/go-example/client/handler/client_handler"
-	"myth/go-example/client/handler/server_handler"
-	"myth/go-example/client/manager"
+	"myth/go-example/middle/handler/server_handler"
+	"myth/go-example/middle/manager"
 	pb "myth/go-example/proto"
 )
 

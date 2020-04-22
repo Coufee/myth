@@ -66,7 +66,3 @@ func GetFileNames(path string) ([]string, error) {
 
 	return names, nil
 }
-
-func Mythical(a string)  {
-
-}
