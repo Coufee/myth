@@ -72,7 +72,7 @@ func SubscriberQueue(n string) SubscriberOption {
 	}
 }
 
-// SubscriberContext set context options to allow broker SubscriberOption passed
+// SubscriberContext set context options to allow utor SubscriberOption passed
 func SubscriberContext(ctx context.Context) SubscriberOption {
 	return func(o *SubscriberOptions) {
 		o.Context = ctx

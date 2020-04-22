@@ -12,7 +12,7 @@ import (
 
 type Options struct {
 	Codecs map[string]codec.NewCodec
-	//Broker       broker.Broker
+	//Broker       utor.Broker
 	Registry registry.Registry
 	//Tracer       trace.Tracer
 	//Auth         auth.Auth
@@ -61,7 +61,7 @@ func newOptions(opt ...Option) Options {
 	//}
 	//
 	//if opts.Broker == nil {
-	//	opts.Broker = broker.DefaultBroker
+	//	opts.Broker = utor.DefaultBroker
 	//}
 	//
 	//if opts.Registry == nil {
@@ -131,7 +131,7 @@ func Advertise(a string) Option {
 }
 
 //// Broker to use for pub/sub
-//func Broker(b broker.Broker) Option {
+//func Broker(b utor.Broker) Option {
 //	return func(o *Options) {
 //		o.Broker = b
 //	}

@@ -122,7 +122,7 @@ type RequestOption func(*RequestOptions)
 //	return DefaultClient.Call(ctx, request, response, opts...)
 //}
 //
-//// Publishes a publication using the default client. Using the underlying broker
+//// Publishes a publication using the default client. Using the underlying utor
 //// set within the options.
 //func Publish(ctx context.Context, msg Message, opts ...PublishOption) error {
 //	return DefaultClient.Publish(ctx, msg, opts...)

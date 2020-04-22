@@ -6,8 +6,8 @@ import (
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/net/rpc/warden"
-	"myth/go-example/client/manager"
 	"myth/go-example/http_server/handler"
+	"myth/go-example/http_server/manager"
 )
 
 func main() {

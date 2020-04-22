@@ -14,7 +14,7 @@ type Options struct {
 
 	// Plugged interfaces
 	//Auth      auth.Auth
-	//Broker    broker.Broker
+	//Broker    utor.Broker
 	Codecs    map[string]codec.NewCodec
 	Registry  registry.Registry
 	//Selector  selector.Selector
@@ -102,7 +102,7 @@ func NewOptions(options ...Option) Options {
 		//PoolSize:  DefaultPoolSize,
 		//PoolTTL:   DefaultPoolTTL,
 		//Auth:      auth.DefaultAuth,
-		//Broker:    broker.DefaultBroker,
+		//Broker:    utor.DefaultBroker,
 		//Selector:  selector.DefaultSelector,
 		//Registry:  registry.DefaultRegistry,
 		//Transport: transport.DefaultTransport,
@@ -116,7 +116,7 @@ func NewOptions(options ...Option) Options {
 }
 
 //// Broker to be used for pub/sub
-//func Broker(b broker.Broker) Option {
+//func Broker(b utor.Broker) Option {
 //	return func(o *Options) {
 //		o.Broker = b
 //	}

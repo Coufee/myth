@@ -1,18 +1,21 @@
 package app
 
 import (
+	"context"
+	"flag"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc/benchmark/flags"
 	"myth/go-essential/base/rpc/client"
+	"myth/go-essential/base/rpc/server"
+	"myth/go-essential/conf"
+	"myth/go-essential/net/rpc/warden"
+	"myth/go-essential/utils"
 	"net"
 	"net/http"
-
-	"myth/go-essential/base/rpc/server"
-	"myth/go-essential/net/rpc/warden"
-
-	"context"
 	"os"
 	"os/signal"
 	"sync"
@@ -46,12 +49,13 @@ type WorkFlow struct {
 }
 
 type MythApp struct {
-	Name      string
-	Usage     string
-	Version   string
-	Manager   Manager
-	Upgrade   websocket.Upgrader
-	WorkFlows []WorkFlow
+	Name          string
+	Usage         string
+	Version       string
+	Config        interface{}
+	Manager       Manager
+	Upgrade       websocket.Upgrader
+	WorkFlows     []WorkFlow
 }
 
 var (
@@ -114,13 +118,30 @@ func (mpp *MythApp) CliRun(workflow ...WorkFlow) error {
 	return app.Run(os.Args)
 }
 
-func (mpp *MythApp) Run(workflow ...WorkFlow) {
+func (mpp *MythApp) Run(workflow ...WorkFlow) error {
 	log.Info("Run Myth App All Start")
 	_, _ = time.LoadLocation("Asia/Shanghai")
 	mpp.WorkFlows = workflow
 	log.SetLevel(log.DebugLevel)
-	wg := sync.WaitGroup{}
 
+	configLoader := &conf.ConfigLoader{
+		Name:          mpp.Name,
+		Config:        mpp.Config,
+		ConfigWatcher: mpp.defaultConfigWatcher,
+	}
+
+	//获取命令行参数
+	configLoader.LoadConfigType = *flag.String("load_type", conf.LoadConfigTypeLocal,"配置类型")
+	configLoader.FilePath = *flag.String("file_path",  conf.LocalConfigFilePath,"配置路径")
+	configLoader.EtcdEndpoint = *flags.StringSlice("etcd", []string{conf.EtcdConfigAddress},"etcd地址")
+
+	log.Debug(configLoader)
+	if err := configLoader.Load(); err != nil {
+		log.Panic(err)
+		return err
+	}
+
+	wg := sync.WaitGroup{}
 	for _, wf := range mpp.WorkFlows {
 		if wf.Type == WorkFlowTypeSync {
 			if err := wf.Process(mpp); err != nil {
@@ -148,14 +169,24 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) {
 			mpp.Close()
 			log.Info("Myth App Exit")
 			time.Sleep(time.Second)
-			return
+			return nil
 		case syscall.SIGHUP:
 		default:
-			return
+			return nil
 		}
 	}
 
-	return
+	return nil
+}
+
+func (mpp *MythApp) defaultConfigWatcher(config interface{}) error {
+	if utils.VerifyNil(config){
+		return errors.New("defaultConfigWatcher reload config is null ")
+	}
+
+	log.Debugf("defaultConfigWatcher %v", config)
+	mpp.Config = config
+	return nil
 }
 
 func (mpp *MythApp) Close() {
@@ -244,7 +275,7 @@ func WithHttpServer(handler func(e *gin.Engine, mpp *MythApp) error) WorkFlow {
 }
 
 func WithRpcClient(handler func(client client.Client, mpp *MythApp) error) WorkFlow {
-	client :=warden.NewClient()
+	client := warden.NewClient()
 	return WorkFlow{
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameRpcServer,
@@ -256,7 +287,7 @@ func WithRpcClient(handler func(client client.Client, mpp *MythApp) error) WorkF
 			if err := client.Init(); err != nil {
 				return err
 			}
-			
+
 			return nil
 		},
 		Close: func(mythApp *MythApp) error {
@@ -271,7 +302,7 @@ func WithRpcServer(handler func(server server.Server, mpp *MythApp) error) WorkF
 		Type: WorkFlowTypeAsync,
 		Name: WorkFlowNameRpcServer,
 		Process: func(mythApp *MythApp) error {
-			address := "127.0.0.1:8081"
+			address := "127.0.0.1:8080"
 			lis, err := net.Listen("tcp", address)
 			if err != nil {
 				return err

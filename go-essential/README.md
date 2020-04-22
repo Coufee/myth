@@ -17,3 +17,4 @@ utils       简单函数工具
                 verify  校验信息，如邮箱，qq，ip，后缀名，手机号等等  
 helper      复杂函数工具   
                 time    时间  
+metadata    元数据 对象，资源等等信息索引

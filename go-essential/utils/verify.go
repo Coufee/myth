@@ -2,10 +2,21 @@ package utils
 
 import (
 	"path"
+	"reflect"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 )
+
+//检测接口控制
+func VerifyNil(i interface{}) bool {
+	vi := reflect.ValueOf(i)
+	if vi.Kind() == reflect.Ptr {
+		return vi.IsNil()
+	}
+
+	return false
+}
 
 //检验邮箱
 func VerifyEmail(email string) bool {

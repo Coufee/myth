@@ -10,7 +10,7 @@ import (
 )
 
 type Options struct {
-	//Broker    broker.Broker
+	//Broker    utor.Broker
 	Client   client.Client
 	Server   server.Server
 	Registry registry.Registry
@@ -31,7 +31,7 @@ type Option func(*Options)
 
 func NewOptions(opts ...Option) Options {
 	opt := Options{
-		//Broker:    broker.DefaultBroker,
+		//Broker:    utor.DefaultBroker,
 		//Client:    client.DefaultClient,
 		//Server:    server.DefaultServer,
 		//Registry:  registry.DefaultRegistry,
@@ -46,7 +46,7 @@ func NewOptions(opts ...Option) Options {
 	return opt
 }
 
-//func Broker(b broker.Broker) Option {
+//func Broker(b utor.Broker) Option {
 //	return func(o *Options) {
 //		o.Broker = b
 //		// Update Client and Server
@@ -85,7 +85,7 @@ func Registry(r registry.Registry) Option {
 		o.Client.Init(client.Registry(r))
 		o.Server.Init(server.Registry(r))
 		// Update Broker
-		//o.Broker.Init(broker.Registry(r))
+		//o.Broker.Init(utor.Registry(r))
 	}
 }
 

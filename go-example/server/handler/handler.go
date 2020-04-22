@@ -10,18 +10,24 @@ import (
 	"google.golang.org/grpc/status"
 	"io"
 	pb "myth/go-example/proto"
+	"myth/go-example/server/common"
+
 	//"github.com/pkg/errors"
 )
 
 type Handler struct {
+	conf *common.Config
 }
 
-func NewHandler() *Handler {
-	result := &Handler{}
+func NewHandler(conf *common.Config) *Handler {
+	result := &Handler{
+		conf: conf,
+	}
 	return result
 }
 
 func (handler *Handler) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
+	log.Debug(handler.conf)
 	resp := &pb.HelloReply{}
 	resp.Success = true
 	resp.Message = "aaa"

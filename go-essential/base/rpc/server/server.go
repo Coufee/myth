@@ -182,7 +182,7 @@ var (
 //}
 //
 //// Subscribe registers a subscriber interface with the default server
-//// which subscribes to specified topic with the broker
+//// which subscribes to specified topic with the utor
 //func Subscribe(s Subscriber) error {
 //	return DefaultServer.Subscribe(s)
 //}
