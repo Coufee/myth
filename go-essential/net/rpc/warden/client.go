@@ -3,7 +3,7 @@ package warden
 import (
 	"context"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"myth/go-essential/base/rpc/client"

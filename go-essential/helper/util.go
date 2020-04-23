@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/axgle/mahonia"
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 	"net"
 	"os"
 	"reflect"

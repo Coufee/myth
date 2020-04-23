@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	log "myth/go-essential/log/log4"
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/net/rpc/warden"

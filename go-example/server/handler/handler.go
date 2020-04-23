@@ -4,11 +4,11 @@ import (
 	"context"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
+	"myth/go-essential/log/logf"
 	pb "myth/go-example/proto"
 	"myth/go-example/server/common"
 

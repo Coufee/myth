@@ -7,13 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc/benchmark/flags"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/base/rpc/server"
 	"myth/go-essential/conf"
+	"myth/go-essential/log/logf"
 	"myth/go-essential/net/rpc/warden"
 	"myth/go-essential/utils"
 	"net"
@@ -230,6 +230,7 @@ func WithLogger() WorkFlow {
 			return err
 		}
 
+		log.SetReportCaller(true)
 		log.SetLevel(l)
 		log.SetOutput(os.Stdout)
 		return nil

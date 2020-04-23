@@ -1,7 +1,7 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/server"
 	"myth/go-essential/net/rpc/warden"

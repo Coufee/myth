@@ -4,7 +4,7 @@ import (
 	"context"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

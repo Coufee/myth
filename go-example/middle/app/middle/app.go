@@ -1,7 +1,7 @@
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/net/rpc/warden"
@@ -15,6 +15,7 @@ func main() {
 	p := app.GetMythApp()
 	p.Config = &common.Config{}
 	p.Run(
+		app.WithLogger(),
 		app.With(func(mpp *app.MythApp) error {
 			log.Info("With")
 			return nil

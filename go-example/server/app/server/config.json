@@ -1,6 +1,6 @@
 {
   "LogConfig": {
-    "LogLevel": "info"
+    "LogLevel": "debug"
   },
   "ServerConfig": {
     "Host": "0.0.0.0",

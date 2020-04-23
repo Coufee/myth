@@ -2,7 +2,7 @@ package client_handler
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"myth/go-essential/net/rpc/warden"
@@ -69,7 +69,7 @@ func (handler *Handler) StreamHello(name string) (*pb.HelloReply, error) {
 //中间件
 func ExampleAuthFunc(i *int) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		log.Debugf("ni hao %v", *i)
+		log.Debugln("ni hao %v", *i)
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }

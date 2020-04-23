@@ -1,7 +1,7 @@
 package manager
 
 import (
-	log "github.com/sirupsen/logrus"
+	"myth/go-essential/log/logf"
 )
 
 type Manger struct {

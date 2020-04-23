@@ -1,7 +1,7 @@
 package conf
 //
 //import (
-//	log "github.com/sirupsen/logrus"
+//	"myth/go-essential/log/logf"
 //	"gopkg.in/ini.v1"
 //)
 //
