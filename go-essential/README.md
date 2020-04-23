@@ -4,7 +4,7 @@ base        基于interface实现可插拔的组件功能
 container   容器实现，包括队列  
             池(slice 切片实现,list 列表实现)  
             group 减少对象创建 懒加载容器  
-log         日志  
+log         普通服务日志
 net         网络链接模块，包括broker(http)  
             warden(grpc)   
 utils       简单函数工具  
