@@ -38,21 +38,28 @@ func (handler *Handler) SayHello(ctx context.Context, request *pb.HelloRequest) 
 	return resp, nil
 }
 
-func (handler *Handler) StreamHello(ss pb.Greeter_StreamHelloServer) error {
-	for i := 0; i < 3; i++ {
-		in, err := ss.Recv()
-		if err == io.EOF {
-			return nil
-		}
+func (handler *Handler) StreamHello(stream pb.Greeter_StreamHelloServer) error {
+	ctx := stream.Context()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("收到客户端通过context发出的终止信号")
+			return ctx.Err()
+		default:
+			in, err := stream.Recv()
+			if err == io.EOF {
+				return nil
+			}
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		ret := &pb.HelloReply{Message: "Hello " + in.Name, Success: true}
-		err = ss.Send(ret)
-		if err != nil {
-			return err
+			ret := &pb.HelloReply{Message: "Hello " + in.Name, Success: true}
+			err = stream.Send(ret)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

@@ -1,9 +1,10 @@
 package main
 
 import (
-	"myth/go-essential/log/logf"
 	"myth/go-essential/app"
+	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/base/rpc/server"
+	"myth/go-essential/log/logf"
 	"myth/go-essential/net/rpc/warden"
 	pb "myth/go-example/proto"
 	"myth/go-example/server/common"
@@ -33,10 +34,10 @@ func main() {
 			log.Info("WithCronTab")
 			return nil
 		}),
-		//app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
-		//	log.Info("WithRpcClient")
-		//	return nil
-		//}),
+		app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
+			log.Info("WithRpcClient")
+			return nil
+		}),
 		app.WithRpcServer(func(srv server.Server, mpp *app.MythApp) error {
 			log.Info("WithRpcServer")
 			server := srv.(*warden.Server)

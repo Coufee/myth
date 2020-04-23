@@ -1,12 +1,16 @@
 package client_handler
 
 import (
+	"bufio"
 	"context"
-	"myth/go-essential/log/logf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"io"
+	"myth/go-essential/log/logf"
 	"myth/go-essential/net/rpc/warden"
 	pb "myth/go-example/proto"
+	"os"
+
 	//"github.com/pkg/errors"
 )
 
@@ -44,26 +48,47 @@ func (handler *Handler) SayHello(name string) (*pb.HelloReply, error) {
 	return r, nil
 }
 
-func (handler *Handler) StreamHello(name string) (*pb.HelloReply, error) {
-	ctx := context.Background()
-	conn, err := handler.Client.Dial(ctx, "127.0.0.1:8080")
+func (handler *Handler) StreamHello(name string)  error {
+	conn, err := grpc.Dial("127.0.0.1:8080", grpc.WithInsecure())
 	if err != nil {
-		log.Error(context.Background(), "did not connect: %v", err)
-		return nil, err
+		log.Errorf("conn fail: [%v]\n", err)
+		return err
 	}
 	defer conn.Close()
 
-	sa := pb.NewGreeterClient(conn)
-
-	ctx = metadata.AppendToOutgoingContext(ctx, "koala_trace_id", "888888888888888888888888888")
-	r, err := sa.SayHello(ctx, &pb.HelloRequest{Name: name})
+	client := pb.NewGreeterClient(conn)
+	ctx := context.Background()
+	stream, err := client.StreamHello(ctx)
 	if err != nil {
-		log.Error(ctx, "could not greet: %v", err)
-		return nil, err
+		log.Printf("create stream error: [%v]\n", err)
 	}
 
-	log.Info(ctx, " Success: %v %v", r.Message, r.Success)
-	return r, nil
+	go func() {
+		in := bufio.NewReader(os.Stdin)
+		for {
+			inStr, _ := in.ReadString('\n')
+			if err := stream.Send(&pb.HelloRequest{Name : inStr}); err != nil {
+				return
+			}
+		}
+	}()
+
+	for {
+		out, err := stream.Recv()
+		if err == io.EOF {
+			log.Debugf("recv end sign")
+			break
+		}
+
+		if err != nil {
+			log.Debugf("recv data error :", err)
+		}
+
+		// 没有错误的情况下，打印来自服务端的消息
+		log.Debugf("client recv data : %s", out.Message)
+	}
+
+	return nil
 }
 
 //中间件

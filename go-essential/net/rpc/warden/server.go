@@ -81,7 +81,7 @@ func (s *Server) deRegister() error {
 	return nil
 }
 
-//普通中间件
+//单体连接中间件
 func (s *Server) UseUnary(handlers ...grpc.UnaryServerInterceptor) *Server {
 	finalSize := len(s.UnaryHandlers) + len(handlers)
 	if finalSize >= int(_abortIndex) {
