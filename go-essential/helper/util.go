@@ -73,7 +73,7 @@ func ConvertTcpAddress(addr net.Addr) net.Addr {
 
 	host, err := os.Hostname()
 	if err != nil {
-		log.Errorf("ServiceRegistry convertTcpAddr Hostname fail, err:%s", err)
+		log.Error("ServiceRegistry convertTcpAddr Hostname fail, err:%s", err)
 		return addr
 	}
 
@@ -81,22 +81,22 @@ func ConvertTcpAddress(addr net.Addr) net.Addr {
 
 	interfaceAddrs, err := net.InterfaceAddrs()
 	if err != nil {
-		log.Errorf("ServiceRegistry convertTcpAddr InterfaceAddrs fail, err:%s", err)
+		log.Error("ServiceRegistry convertTcpAddr InterfaceAddrs fail, err:%s", err)
 		return addr
 	}
 
-	log.Debugf("ServiceRegistry convertTcpAddr InterfaceAddrs host:[%s], addr:[%s]", host, interfaceAddrs)
+	log.Debug("ServiceRegistry convertTcpAddr InterfaceAddrs host:[%s], addr:[%s]", host, interfaceAddrs)
 
 	ips = make([]net.IP, 0)
 	for _, addr := range interfaceAddrs {
 		if ipAddr, ok := addr.(*net.IPNet); ok {
 			ips = append(ips, ipAddr.IP)
 		} else {
-			log.Debugf("bot ip addr addr:[%s], type:[%s]", addr, reflect.TypeOf(addr))
+			log.Debug("bot ip addr addr:[%s], type:[%s]", addr, reflect.TypeOf(addr))
 		}
 	}
 
-	log.Debugf("ServiceRegistry convertTcpAddr LookupIP host:[%s], ip:[%s]", host, ips)
+	log.Debug("ServiceRegistry convertTcpAddr LookupIP host:[%s], ip:[%s]", host, ips)
 
 	found := false
 	for _, ip := range ips {
@@ -116,7 +116,7 @@ func ConvertTcpAddress(addr net.Addr) net.Addr {
 	}
 
 	if !found {
-		log.Errorf("ServiceRegistry convertTcpAddr LookupIP no suitable ip found, host:%s", ips)
+		log.Error("ServiceRegistry convertTcpAddr LookupIP no suitable ip found, host:%s", ips)
 		return addr
 	}
 

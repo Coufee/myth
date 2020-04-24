@@ -4,7 +4,6 @@ import (
 	"flag"
 	"os"
 	"runtime"
-	"strconv"
 
 	"myth/go-essential/conf/env"
 )
@@ -21,14 +20,7 @@ func init() {
 	addFlag(flag.CommandLine)
 }
 
-// addFlag init log from dsn.
 func addFlag(args *flag.FlagSet) {
-	_StdOut, _ = strconv.ParseBool(os.Getenv("LOG_STDOUT"))
-	_Dir = os.Getenv("LOG_DIR")
-	if tf := os.Getenv("LOG_FILTER"); len(tf) > 0 {
-		_Filter.Set(tf)
-	}
-	// get val from flag
 	args.BoolVar(&_StdOut, "log.stdout", _StdOut, "log enable stdout or not, or use LOG_STDOUT env variable.")
 	args.StringVar(&_Dir, "log.dir", _Dir, "log file `path, or use LOG_DIR env variable.")
 	args.StringVar(&_NetWork, "log.network", _NetWork, "log file `path, or use LOG_DIR env variable.")

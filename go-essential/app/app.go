@@ -36,12 +36,20 @@ const (
 	WorkFlowNameCron       = "cron"
 )
 
-func init()  {
+var (
+	_LoadType = conf.LoadConfigTypeIni
+	_FilePath = conf.LocalConfigFilePath
+	_EtcdAddr = conf.EtcdConfigAddress
+)
+
+func init() {
 	addFlag(flag.CommandLine)
 }
 
-// addFlag init log from dsn.
-func addFlag(fs *flag.FlagSet) {
+func addFlag(args *flag.FlagSet) {
+	args.StringVar(&_LoadType, "conf.load_type", _LoadType, "配置类型")
+	args.StringVar(&_FilePath, "conf.file_path", _FilePath, "配置路径")
+	args.StringVar(&_EtcdAddr, "conf.etcd_addr", _EtcdAddr, "etcd地址")
 }
 
 type Manager interface {
@@ -96,7 +104,6 @@ func (mpp *MythApp) CliRun(workflow ...WorkFlow) error {
 			},
 		},
 		Action: func(ctx *cli.Context) error {
-			//log.SetLevel(log.DebugLevel)
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 
@@ -131,21 +138,17 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) error {
 	log.Info("Run Myth App All Start")
 	_, _ = time.LoadLocation("Asia/Shanghai")
 	mpp.WorkFlows = workflow
-	//log.SetLevel(log.DebugLevel)
 
 	//configLoader := &conf.ConfigLoader{
 	//	Name:          mpp.Name,
 	//	Config:        mpp.Config,
+	//	LoadConfigType: _LoadType,
+	//	FilePath: _FilePath,
+	//	EtcdEndpoint: _EtcdAddr,
 	//	ConfigWatcher: mpp.defaultConfigWatcher,
 	//}
-
-	//获取命令行参数
-	//configLoader.LoadConfigType = *flag.String("load_type", conf.LoadConfigTypeIni, "配置类型")
-	//configLoader.FilePath = *flag.String("file_path", conf.LocalConfigFilePath, "配置路径")
-	//configLoader.EtcdEndpoint = *flags.StringSlice("etcd", []string{conf.EtcdConfigAddress}, "etcd地址")
-	//
 	//if err := configLoader.Load(); err != nil {
-	//	log.Panic(err)
+	//	panic(err)
 	//	return err
 	//}
 

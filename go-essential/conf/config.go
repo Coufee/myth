@@ -17,9 +17,8 @@ const (
 	LocalConfigFilePath = "config"
 	EtcdConfigAddress   = "127.0.0.1:2379"
 
-
 	LoadConfigTypeLocal  = "local"
-	LoadConfigTypeIni  = "ini"
+	LoadConfigTypeIni    = "ini"
 	LoadConfigTypeEtcd   = "etcd"
 	LoadConfigTypeZK     = "zookeeper"
 	LoadConfigTypeConsul = "consul"
@@ -28,7 +27,7 @@ const (
 
 var LoadConfigMap = map[string]interface{}{
 	LoadConfigTypeLocal:  nil,
-	LoadConfigTypeIni:nil,
+	LoadConfigTypeIni:    nil,
 	LoadConfigTypeEtcd:   nil,
 	LoadConfigTypeZK:     nil,
 	LoadConfigTypeConsul: nil,
@@ -63,10 +62,10 @@ type ConfigLoader struct {
 	FilePath       string
 	Config         interface{}
 	ConfigWatcher  ConfigWatcher
-	EtcdEndpoint   []string
+	EtcdEndpoint   string
 }
 
-func NewConfigLoader(name, filepath string, etcdEndpoint []string) *ConfigLoader {
+func NewConfigLoader(name, filepath string, etcdEndpoint string) *ConfigLoader {
 	return &ConfigLoader{
 		Name:         name,
 		FilePath:     filepath,
@@ -151,7 +150,7 @@ func (loader *ConfigLoader) LoadEurekaConfig() error {
 
 func (loader *ConfigLoader) LoadEtcdConfig() error {
 	etcdClient, err := clientv3.New(clientv3.Config{
-		Endpoints:   loader.EtcdEndpoint,
+		Endpoints:   []string{loader.EtcdEndpoint},
 		DialTimeout: time.Second * 3,
 	})
 
