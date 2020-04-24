@@ -4,7 +4,7 @@ import (
 	"context"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"myth/go-essential/log/logf"
+	log "myth/go-essential/log/logc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,7 +43,7 @@ func (handler *Handler) StreamHello(stream pb.Greeter_StreamHelloServer) error {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("收到客户端通过context发出的终止信号")
+			log.Info("收到客户端通过context发出的终止信号")
 			return ctx.Err()
 		default:
 			in, err := stream.Recv()

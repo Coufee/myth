@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"
-	"myth/go-essential/log/logf"
+	log "myth/go-essential/log/logc"
 	pb "myth/go-example/proto"
 	"myth/go-example/server/common"
 
@@ -27,8 +27,7 @@ func NewHandler(conf *common.Config) *Handler {
 }
 
 func (handler *Handler) SayHello(ctx context.Context, request *pb.HelloRequest) (*pb.HelloReply, error) {
-	log.Debug(handler.conf)
-	log.Debug(log.GetLevel())
+	log.Debug("conf ",handler.conf)
 	resp := &pb.HelloReply{}
 	resp.Success = true
 	resp.Message = "aaa"

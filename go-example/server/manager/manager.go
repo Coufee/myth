@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"myth/go-essential/log/logf"
+	log "myth/go-essential/log/logc"
 )
 
 type Manger struct {

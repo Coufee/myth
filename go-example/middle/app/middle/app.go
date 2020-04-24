@@ -3,7 +3,7 @@ package main
 import (
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/client"
-	"myth/go-essential/log/logf"
+	log "myth/go-essential/log/logc"
 	"myth/go-essential/net/rpc/warden"
 	"myth/go-example/middle/common"
 	"myth/go-example/middle/handler/client_handler"
@@ -14,19 +14,10 @@ func main() {
 	p := app.GetMythApp()
 	p.Config = &common.Config{}
 	p.Run(
-		app.WithLogger(),
-		app.With(func(mpp *app.MythApp) error {
-			log.Info("With")
-			return nil
-		}),
 		app.WithManager(func(mpp *app.MythApp) app.Manager {
 			log.Info("WithManager")
 			manager := manager.NewManager()
 			return manager
-		}),
-		app.WithCronTab(func(mpp *app.MythApp) error {
-			log.Info("WithCronTab")
-			return nil
 		}),
 		app.WithCronTab(func(mpp *app.MythApp) error {
 			log.Info("WithCronTab")

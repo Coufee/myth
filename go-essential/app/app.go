@@ -7,13 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"github.com/urfave/cli/v2"
-	"google.golang.org/grpc/benchmark/flags"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/base/rpc/server"
 	"myth/go-essential/conf"
-	"myth/go-essential/log/logf"
+	log "myth/go-essential/log/logc"
 	"myth/go-essential/net/rpc/warden"
 	"myth/go-essential/utils"
 	"net"
@@ -37,6 +35,14 @@ const (
 	WorkFlowNameManager    = "manager"
 	WorkFlowNameCron       = "cron"
 )
+
+func init()  {
+	addFlag(flag.CommandLine)
+}
+
+// addFlag init log from dsn.
+func addFlag(fs *flag.FlagSet) {
+}
 
 type Manager interface {
 	Start() error
@@ -90,7 +96,7 @@ func (mpp *MythApp) CliRun(workflow ...WorkFlow) error {
 			},
 		},
 		Action: func(ctx *cli.Context) error {
-			log.SetLevel(log.DebugLevel)
+			//log.SetLevel(log.DebugLevel)
 			wg := sync.WaitGroup{}
 			wg.Add(1)
 
@@ -125,24 +131,23 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) error {
 	log.Info("Run Myth App All Start")
 	_, _ = time.LoadLocation("Asia/Shanghai")
 	mpp.WorkFlows = workflow
-	log.SetLevel(log.DebugLevel)
+	//log.SetLevel(log.DebugLevel)
 
-	configLoader := &conf.ConfigLoader{
-		Name:          mpp.Name,
-		Config:        mpp.Config,
-		ConfigWatcher: mpp.defaultConfigWatcher,
-	}
+	//configLoader := &conf.ConfigLoader{
+	//	Name:          mpp.Name,
+	//	Config:        mpp.Config,
+	//	ConfigWatcher: mpp.defaultConfigWatcher,
+	//}
 
 	//获取命令行参数
-	configLoader.LoadConfigType = *flag.String("load_type", conf.LoadConfigTypeLocal, "配置类型")
-	configLoader.FilePath = *flag.String("file_path", conf.LocalConfigFilePath, "配置路径")
-	configLoader.EtcdEndpoint = *flags.StringSlice("etcd", []string{conf.EtcdConfigAddress}, "etcd地址")
-
-	log.Debug(configLoader)
-	if err := configLoader.Load(); err != nil {
-		log.Panic(err)
-		return err
-	}
+	//configLoader.LoadConfigType = *flag.String("load_type", conf.LoadConfigTypeIni, "配置类型")
+	//configLoader.FilePath = *flag.String("file_path", conf.LocalConfigFilePath, "配置路径")
+	//configLoader.EtcdEndpoint = *flags.StringSlice("etcd", []string{conf.EtcdConfigAddress}, "etcd地址")
+	//
+	//if err := configLoader.Load(); err != nil {
+	//	log.Panic(err)
+	//	return err
+	//}
 
 	wg := sync.WaitGroup{}
 	for _, wf := range mpp.WorkFlows {
@@ -182,20 +187,13 @@ func (mpp *MythApp) Run(workflow ...WorkFlow) error {
 	return nil
 }
 
-
-//func (mpp *MythApp) AddConfigWatcher(watcher conf.ConfigWatcher) {
-//	mpp.ConfigWatcher = append(mpp.ConfigWatcher, watcher)
-//}
-
 func (mpp *MythApp) defaultConfigWatcher(config interface{}) error {
 	if utils.VerifyNil(config) {
 		return errors.New("defaultConfigWatcher reload config is null ")
 	}
 
-	log.Infof("defaultConfigWatcher %v", config)
 	mpp.Config = config
 	if !utils.VerifyNil(mpp.ConfigWatcher) {
-		log.Infof("ConfigWatcher %v", config)
 		mpp.ConfigWatcher(config)
 	}
 	return nil
@@ -222,41 +220,54 @@ func With(handler func(mpp *MythApp) error) WorkFlow {
 	}
 }
 
-func WithLogger() WorkFlow {
-	setLogLevel := func(level string) error {
-		l, err := log.ParseLevel(level)
-		if err != nil {
-			log.Errorf("logger level(%v) error(%v)", viper.GetString("LogLevel"), err)
-			return err
-		}
-
-		log.SetReportCaller(true)
-		log.SetLevel(l)
-		log.SetOutput(os.Stdout)
-		return nil
-	}
-
+func WithConfig(handler func(mpp *MythApp) error) WorkFlow {
 	return WorkFlow{
-		Type: WorkFlowTypeSync,
-		Name: WorkFlowNameLog,
+		Type: WorkFlowTypeAsync,
+		Name: WorkFlowNameBase,
 		Process: func(mythApp *MythApp) error {
-			LoggerConfig, ok := mythApp.Config.(conf.GetLogConfig)
-			if !ok {
-				log.Error("config is not TCPServerConfig")
-				return errors.Errorf("config is not TCPServerConfig")
-			}
-
-			mythApp.ConfigWatcher = func(_ interface{}) error {
-				return setLogLevel(LoggerConfig.GetLogConfig().LogLevel)
-			}
-
-			return setLogLevel(LoggerConfig.GetLogConfig().LogLevel)
+			return handler(mythApp)
 		},
 		Close: func(mythApp *MythApp) error {
 			return nil
 		},
 	}
 }
+
+//func WithLogger() WorkFlow {
+//	setLogLevel := func(level string) error {
+//		l, err := log.ParseLevel(level)
+//		if err != nil {
+//			log.Errorf("logger level(%v) error(%v)", viper.GetString("LogLevel"), err)
+//			return err
+//		}
+//
+//		log.SetReportCaller(true)
+//		log.SetLevel(l)
+//		log.SetOutput(os.Stdout)
+//		return nil
+//	}
+//
+//	return WorkFlow{
+//		Type: WorkFlowTypeSync,
+//		Name: WorkFlowNameLog,
+//		Process: func(mythApp *MythApp) error {
+//			LoggerConfig, ok := mythApp.Config.(conf.GetLogConfig)
+//			if !ok {
+//				log.Error("config is not TCPServerConfig")
+//				return errors.Errorf("config is not TCPServerConfig")
+//			}
+//
+//			mythApp.ConfigWatcher = func(_ interface{}) error {
+//				return setLogLevel(LoggerConfig.GetLogConfig().LogLevel)
+//			}
+//
+//			return setLogLevel(LoggerConfig.GetLogConfig().LogLevel)
+//		},
+//		Close: func(mythApp *MythApp) error {
+//			return nil
+//		},
+//	}
+//}
 
 func WithCronTab(handler func(mpp *MythApp) error) WorkFlow {
 	return WorkFlow{
@@ -298,7 +309,7 @@ func WithHttpServer(handler func(e *gin.Engine, mpp *MythApp) error) WorkFlow {
 		Process: func(mythApp *MythApp) error {
 			config, ok := mythApp.Config.(conf.GetServerConfig)
 			if !ok {
-				log.Errorf("WithRpcServer config is not ServerConfig \n %s", mythApp.Config)
+				log.Error("WithRpcServer config is not ServerConfig \n %s", mythApp.Config)
 				return errors.Errorf(" WithHttpServer config is not ServerConfig")
 			}
 
@@ -345,7 +356,7 @@ func WithRpcServer(handler func(server server.Server, mpp *MythApp) error) WorkF
 		Process: func(mythApp *MythApp) error {
 			config, ok := mythApp.Config.(conf.GetServerConfig)
 			if !ok {
-				log.Errorf("WithRpcServer config is not ServerConfig \n %s", mythApp.Config.(conf.GetServerConfig))
+				log.Error("WithRpcServer config is not ServerConfig \n %s", mythApp.Config.(conf.GetServerConfig))
 				return errors.Errorf("WithRpcServer config is not ServerConfig")
 			}
 

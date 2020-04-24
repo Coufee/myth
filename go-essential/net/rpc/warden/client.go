@@ -3,12 +3,11 @@ package warden
 import (
 	"context"
 	"github.com/pkg/errors"
-	"myth/go-essential/log/logf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"myth/go-essential/base/rpc/client"
 	"myth/go-essential/container/pool"
-	"os"
+	log "myth/go-essential/log/logc"
 	"sync"
 )
 
@@ -147,7 +146,7 @@ func (c *Client) dial(ctx context.Context, target string, opts ...grpc.DialOptio
 	conn, err = grpc.DialContext(ctx, target, dialOptions...)
 	if err != nil {
 		err = errors.WithStack(err)
-		log.Error(os.Stderr, "warden: client dial %s error %v!", target, err)
+		log.Error("warden: client dial %s error %v!", target, err)
 		return nil, err
 	}
 

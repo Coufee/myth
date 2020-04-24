@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"io"
-	"myth/go-essential/log/logf"
+	log "myth/go-essential/log/logc"
 	"myth/go-essential/net/rpc/warden"
 	pb "myth/go-example/proto"
 	"os"
@@ -30,7 +30,7 @@ func (handler *Handler) SayHello(name string) (*pb.HelloReply, error) {
 	ctx := context.Background()
 	conn, err := handler.Client.Dial(ctx, "127.0.0.1:8080")
 	if err != nil {
-		log.Error(context.Background(), "did not connect: %v", err)
+		log.Errorc(context.Background(), "did not connect: %v", err)
 		return nil, err
 	}
 	defer conn.Close()
@@ -40,18 +40,18 @@ func (handler *Handler) SayHello(name string) (*pb.HelloReply, error) {
 	ctx = metadata.AppendToOutgoingContext(ctx, "koala_trace_id", "888888888888888888888888888")
 	r, err := sa.SayHello(ctx, &pb.HelloRequest{Name: name})
 	if err != nil {
-		log.Error(ctx, "could not greet: %v", err)
+		log.Errorc(ctx, "could not greet: %v", err)
 		return nil, err
 	}
 
-	log.Info(ctx, " Success: %v %v", r.Message, r.Success)
+	log.Infoc(ctx, " Success: %v %v", r.Message, r.Success)
 	return r, nil
 }
 
 func (handler *Handler) StreamHello(name string)  error {
 	conn, err := grpc.Dial("127.0.0.1:8080", grpc.WithInsecure())
 	if err != nil {
-		log.Errorf("conn fail: [%v]\n", err)
+		log.Error("conn fail: [%v]\n", err)
 		return err
 	}
 	defer conn.Close()
@@ -60,7 +60,7 @@ func (handler *Handler) StreamHello(name string)  error {
 	ctx := context.Background()
 	stream, err := client.StreamHello(ctx)
 	if err != nil {
-		log.Printf("create stream error: [%v]\n", err)
+		log.Error("create stream error: [%v]\n", err)
 	}
 
 	go func() {
@@ -76,16 +76,16 @@ func (handler *Handler) StreamHello(name string)  error {
 	for {
 		out, err := stream.Recv()
 		if err == io.EOF {
-			log.Debugf("recv end sign")
+			log.Debug("recv end sign")
 			break
 		}
 
 		if err != nil {
-			log.Debugf("recv data error :", err)
+			log.Debug("recv data error :", err)
 		}
 
 		// 没有错误的情况下，打印来自服务端的消息
-		log.Debugf("client recv data : %s", out.Message)
+		log.Debug("client recv data : %s", out.Message)
 	}
 
 	return nil
@@ -94,7 +94,7 @@ func (handler *Handler) StreamHello(name string)  error {
 //中间件
 func ExampleAuthFunc(i *int) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		log.Debugln("ni hao %v", *i)
+		log.Debug("ni hao %v", *i)
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }

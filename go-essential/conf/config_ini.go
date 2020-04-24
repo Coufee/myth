@@ -1,7 +1,7 @@
 package conf
 //
 //import (
-//	"myth/go-essential/log/logf"
+//	log "myth/go-essential/log/logc"
 //	"gopkg.in/ini.v1"
 //)
 //

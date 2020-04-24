@@ -3,11 +3,10 @@ package warden
 import (
 	"context"
 	"github.com/pkg/errors"
-	"myth/go-essential/log/logf"
 	"google.golang.org/grpc"
 	"io"
 	"myth/go-essential/container/pool"
-	"os"
+	log "myth/go-essential/log/logc"
 )
 
 type rpcConn struct {
@@ -46,12 +45,14 @@ func (p *ClientPool) Get(ctx context.Context, target string, opts ...grpc.DialOp
 	}
 
 	pc, ok := c.(*rpcConn)
-	log.Debug(ok)
+	if !ok {
+		return nil,errors.New("get conn error")
+	}
 
 	conn1, err := grpc.DialContext(ctx, target, opts...)
 	if err != nil {
 		err = errors.WithStack(err)
-		log.Error(os.Stderr, "warden: client dial %s error %v!", target, err)
+		log.Error( "warden: client dial %s error %v!", target, err)
 		return nil, err
 	}
 	pc.ClientConn = conn1

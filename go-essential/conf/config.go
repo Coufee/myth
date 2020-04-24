@@ -8,8 +8,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
-	"myth/go-essential/log/logf"
 	"github.com/spf13/viper"
+	log "myth/go-essential/log/logc"
 	"time"
 )
 
@@ -17,7 +17,9 @@ const (
 	LocalConfigFilePath = "config"
 	EtcdConfigAddress   = "127.0.0.1:2379"
 
+
 	LoadConfigTypeLocal  = "local"
+	LoadConfigTypeIni  = "ini"
 	LoadConfigTypeEtcd   = "etcd"
 	LoadConfigTypeZK     = "zookeeper"
 	LoadConfigTypeConsul = "consul"
@@ -26,6 +28,7 @@ const (
 
 var LoadConfigMap = map[string]interface{}{
 	LoadConfigTypeLocal:  nil,
+	LoadConfigTypeIni:nil,
 	LoadConfigTypeEtcd:   nil,
 	LoadConfigTypeZK:     nil,
 	LoadConfigTypeConsul: nil,
@@ -75,6 +78,8 @@ func (loader *ConfigLoader) Load() error {
 	switch loader.LoadConfigType {
 	case LoadConfigTypeLocal:
 		return loader.LoadLocalConfig()
+	case LoadConfigTypeIni:
+		return loader.LoadIniConfig()
 	case LoadConfigTypeEtcd:
 		return loader.LoadEtcdConfig()
 	case LoadConfigTypeZK:
@@ -86,6 +91,7 @@ func (loader *ConfigLoader) Load() error {
 	default:
 		return errors.New("load config error: config not exist")
 	}
+
 	return loader.LoadLocalConfig()
 }
 
@@ -99,24 +105,24 @@ func (loader *ConfigLoader) LoadLocalConfig() error {
 
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
-		log.Errorf("ConfigLoader ReadConfig failed, err: %s", err)
+		log.Error("ConfigLoader ReadConfig failed, err: %s", err)
 		return err
 	}
 
 	if err := viper.Unmarshal(loader.Config); err != nil {
-		log.Errorf("ConfigLoader Unmarshal failed %s", err)
+		log.Error("ConfigLoader Unmarshal failed %s", err)
 		return err
 	}
 
 	configData, _ := json.MarshalIndent(viper.AllSettings(), "", "  ")
-	log.Debugf("ConfigLoader LoadConfig success, \n%s", configData)
+	log.Debug("ConfigLoader LoadConfig success, \n%s", configData)
 
 	viper.WatchConfig()
 	viper.OnConfigChange(func(in fsnotify.Event) {
-		log.Infof("ConfigLoader OnConfigChange op:%s, name:%s", in.Op, in.Name)
+		log.Info("ConfigLoader OnConfigChange op:%s, name:%s", in.Op, in.Name)
 
 		if err := viper.Unmarshal(loader.Config); err != nil {
-			log.Errorf("ConfigLoader OnConfigChange failed %s", err)
+			log.Error("ConfigLoader OnConfigChange failed %s", err)
 		} else {
 			if loader.ConfigWatcher != nil {
 				loader.ConfigWatcher(loader.Config)
@@ -124,6 +130,10 @@ func (loader *ConfigLoader) LoadLocalConfig() error {
 		}
 	})
 
+	return nil
+}
+
+func (loader *ConfigLoader) LoadIniConfig() error {
 	return nil
 }
 
@@ -146,7 +156,7 @@ func (loader *ConfigLoader) LoadEtcdConfig() error {
 	})
 
 	if err != nil {
-		log.Errorf("ConfigLoader LoadEtcdConfig err:%s", err)
+		log.Error("ConfigLoader LoadEtcdConfig err:%s", err)
 		return err
 	}
 
@@ -154,49 +164,49 @@ func (loader *ConfigLoader) LoadEtcdConfig() error {
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 	response, err := etcdClient.KV.Get(ctx, key)
 	if err != nil {
-		log.Errorf("ConfigLoader LoadEtcdConfig err:%s", err)
+		log.Error("ConfigLoader LoadEtcdConfig err:%s", err)
 		return err
 	}
 
 	if response.Count == 0 {
-		log.Errorf("ConfigLoader LoadEtcdConfig response empty")
+		log.Error("ConfigLoader LoadEtcdConfig response empty")
 		return errors.Errorf("ConfigLoader LoadEtcdConfig response empty")
 
 	}
 
 	err = toml.Unmarshal(response.Kvs[0].Value, loader.Config)
 	if err != nil {
-		log.Errorf("ConfigLoader LoadEtcdConfig err:%s", err)
+		log.Error("ConfigLoader LoadEtcdConfig err:%s", err)
 		return err
 	}
 
 	viper.SetConfigType("toml")
 	if err := viper.ReadConfig(bytes.NewBuffer(response.Kvs[0].Value)); err != nil {
-		log.Errorf("ConfigLoader LoadEtcdConfig err:%s", err)
+		log.Error("ConfigLoader LoadEtcdConfig err:%s", err)
 		return err
 	}
 
 	configData, _ := json.MarshalIndent(viper.AllSettings(), "", "  ")
-	log.Debugf("ConfigLoader ReadRemoteConfig success, \n%s", configData)
+	log.Debug("ConfigLoader ReadRemoteConfig success, \n%s", configData)
 
 	watch := etcdClient.Watcher.Watch(context.Background(), key)
 
 	go func() {
 		for resp := range watch {
-			log.Infof("ConfigLoader ReadRemoteConfig watcher resp on [%s]", resp)
+			log.Info("ConfigLoader ReadRemoteConfig watcher resp on [%s]", resp)
 			value := resp.Events[0].Kv.Value
 
 			err = toml.Unmarshal(value, loader.Config)
 			if err != nil {
-				log.Errorf("ConfigLoader ReadRemoteConfig watcher err:%s", err)
+				log.Error("ConfigLoader ReadRemoteConfig watcher err:%s", err)
 				continue
 			}
 
 			configData, _ := json.MarshalIndent(loader.Config, "", "  ")
-			log.Debugf("ConfigLoader ReadRemoteConfig watcher success, \n%s", configData)
+			log.Debug("ConfigLoader ReadRemoteConfig watcher success, \n%s", configData)
 
 			if err := viper.ReadConfig(bytes.NewBuffer(value)); err != nil {
-				log.Errorf("ConfigLoader ReadRemoteConfig watcher err:%s", err)
+				log.Error("ConfigLoader ReadRemoteConfig watcher err:%s", err)
 				continue
 			}
 

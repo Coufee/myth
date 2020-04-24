@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"myth/go-essential/app"
 	"myth/go-essential/base/rpc/client"
-	log "myth/go-essential/log/logf"
+	log "myth/go-essential/log/logc"
 	"myth/go-essential/net/rpc/warden"
 	"myth/go-example/http_server/common"
 	"myth/go-example/http_server/handler"
@@ -15,18 +15,10 @@ func main() {
 	p := app.GetMythApp()
 	p.Config = &common.Config{}
 	p.Run(
-		app.With(func(mpp *app.MythApp) error {
-			log.Info("With")
-			return nil
-		}),
 		app.WithManager(func(mpp *app.MythApp) app.Manager {
 			log.Info("WithManager")
 			manager := manager.NewManager()
 			return manager
-		}),
-		app.WithCronTab(func(mpp *app.MythApp) error {
-			log.Info("WithCronTab")
-			return nil
 		}),
 		app.WithCronTab(func(mpp *app.MythApp) error {
 			log.Info("WithCronTab")
@@ -39,6 +31,12 @@ func main() {
 		app.WithRpcClient(func(client client.Client, mpp *app.MythApp) error {
 			log.Info("WithRpcClient")
 			c := client.(*warden.Client)
+			log.Init(nil)
+			log.Debug("hello start")
+			log.Info("hello start")
+			log.Error("hello start")
+			log.Warn("hello start")
+			log.Emerg("hello start")
 
 			//中间件
 			i:=0
